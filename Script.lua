@@ -48,6 +48,9 @@ MakeNotifi({
   Time = 5
 })
 
+local Paragraph = AddParagraph(Main, {"Note", "Fix"})
+SetParagraph(Paragraph, {"Desenvolvedor", "VitoScript BrazilBlackscript!"})
+
 
 AddButton(Main, {
     Name = "Fly GUI v4",
@@ -126,11 +129,45 @@ local Toggle = AddToggle(Main, {
     end
 })
 
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local velocidadeAtivada = false
-local velocidadeValor = 25 -- valor inicial
+local velocidadeValor = 25
+local armaEquipada = false
+
+-- Atualiza a velocidade se condições forem atendidas
+local function atualizarVelocidade()
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        if velocidadeAtivada and armaEquipada then
+            humanoid.WalkSpeed = velocidadeValor
+        else
+            humanoid.WalkSpeed = 16 -- velocidade padrão
+        end
+    end
+end
+
+-- Verifica quando uma Tool (arma) é equipada
+local function monitorarArmas(character)
+    character.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            armaEquipada = true
+            atualizarVelocidade()
+        end
+    end)
+
+    character.ChildRemoved:Connect(function(child)
+        if child:IsA("Tool") then
+            armaEquipada = false
+            atualizarVelocidade()
+        end
+    end)
+end
 
 -- Slider de Velocidade
 AddSlider(Main, {
@@ -141,13 +178,7 @@ AddSlider(Main, {
     Increase = 1,
     Callback = function(Value)
         velocidadeValor = Value
-        if velocidadeAtivada then
-            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid.WalkSpeed = velocidadeValor
-            end
-        end
+        atualizarVelocidade()
     end
 })
 
@@ -157,13 +188,21 @@ AddToggle(Main, {
     Default = false,
     Callback = function(Value)
         velocidadeAtivada = Value
-        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = Value and velocidadeValor or 16
-        end
+        atualizarVelocidade()
     end
 })
+
+-- Monitorar personagem atual e futuros
+if LocalPlayer.Character then
+    monitorarArmas(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    armaEquipada = false
+    monitorarArmas(character)
+end)
+
+
 
 local jumpAtivado = false
 local jumpPowerSelecionado = 25
@@ -359,127 +398,6 @@ AddToggle(Visuais, {
         end
     end
 })
-
-
-
-
-local Players = game:GetService("Players")
-
-local LocalPlayer = Players.LocalPlayer
-
-
--- Tabelas de controle
-local espVidaAtivado = false
-local vidaGuis = {}
-local connections = {}
-
--- Função para remover todos os ESPs
-local function desativarESP()
-	for player, gui in pairs(vidaGuis) do
-		if gui then
-			gui:Destroy()
-		end
-	end
-	vidaGuis = {}
-
-	for player, conn in pairs(connections) do
-		if conn then
-			conn:Disconnect()
-		end
-	end
-	connections = {}
-end
-
--- Função para adicionar ESP de vida a um jogador
-local function addESP(player)
-	if not espVidaAtivado then return end
-
-	-- Limpa anteriores
-	if vidaGuis[player] then
-		vidaGuis[player]:Destroy()
-		vidaGuis[player] = nil
-	end
-	if connections[player] then
-		connections[player]:Disconnect()
-		connections[player] = nil
-	end
-
-	local function criarESP(character)
-		if not espVidaAtivado then return end
-		local humanoid = character:FindFirstChild("Humanoid")
-		local head = character:FindFirstChild("Head")
-		if not humanoid or not head then return end
-
-		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.new(3, 0, 1, 0)
-		billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-		billboard.AlwaysOnTop = true
-		billboard.Name = "VidaESP"
-		billboard.Parent = head
-
-		local healthLabel = Instance.new("TextLabel")
-		healthLabel.Size = UDim2.new(1, 0, 1, 0)
-		healthLabel.BackgroundTransparency = 1
-		healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-		healthLabel.TextStrokeTransparency = 0
-		healthLabel.TextScaled = true
-		healthLabel.Font = Enum.Font.SourceSansBold
-		healthLabel.Parent = billboard
-
-		vidaGuis[player] = billboard
-
-		local function updateHealth(newHealth)
-			if healthLabel and humanoid then
-				healthLabel.Text = "Vida: " .. math.floor(newHealth) .. "/" .. math.floor(humanoid.MaxHealth)
-			end
-		end
-
-		updateHealth(humanoid.Health)
-		humanoid.HealthChanged:Connect(updateHealth)
-	end
-
-	-- Conectar ao CharacterAdded
-	connections[player] = player.CharacterAdded:Connect(function(character)
-		wait(0.5)
-		criarESP(character)
-	end)
-
-	-- Se o jogador já tiver personagem carregado
-	if player.Character then
-		criarESP(player.Character)
-	end
-end
-
--- Ativar ESP para todos os jogadores existentes e os novos
-local function ativarESP()
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer then
-			addESP(player)
-		end
-	end
-
-	-- Monitorar novos jogadores que entrarem
-	connections["PlayerAdded"] = Players.PlayerAdded:Connect(function(player)
-		if espVidaAtivado then
-			addESP(player)
-		end
-	end)
-end
-
--- Toggle de ativação do ESP de Vida
-AddToggle(Visuais, {
-	Name = "ESP Vida",
-	Default = false,
-	Callback = function(Value)
-		espVidaAtivado = Value
-		if espVidaAtivado then
-			ativarESP()
-		else
-			desativarESP()
-		end
-	end
-})
-
 
 
 -- Variável global para controlar o estado do ESP
@@ -738,7 +656,7 @@ AddToggle(Player, {
 			end
 		else
 			pararObservar()
-   end
+		end
 	end
 })
 
@@ -762,7 +680,6 @@ AddButton(Player, {
 })
 
 
-
 AddButton(Teleport, {
     Name = "Bandeira",
     Callback = function()
@@ -773,6 +690,25 @@ AddButton(Teleport, {
     end
 })
 
+AddButton(Teleport, {
+    Name = "Barril De Petróleo 1",
+    Callback = function()
+        print("Botão foi clicado!")
+        pcall(function()
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(668.4365844726562, 121.2524185180664, 783.4068603515625)
+        end)
+    end
+})
+
+AddButton(Teleport, {
+    Name = "Barril De Petróleo 2",
+    Callback = function()
+        print("Botão foi clicado!")
+        pcall(function()
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1214.93896484375, 67.0999755859375, -1881.4852294921875)
+        end)
+    end
+})
 
 
 -- Serviços 
