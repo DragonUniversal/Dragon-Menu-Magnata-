@@ -22,12 +22,13 @@ MakeWindow({
     }
 })
 
--- Botão de minimizar no topo central
+
+-- Botão de minimizar
+
 MinimizeButton({
+
     Image = "rbxassetid://137903795082783",
     Size = {40, 40},
-    Position = UDim2.new(0.5, 0, 0, 10),
-    AnchorPoint = Vector2.new(0.5, 0),
     Color = Color3.fromRGB(10, 10, 10),
     Corner = true,
     Stroke = false,
@@ -35,11 +36,21 @@ MinimizeButton({
 })
 
 -- Criação da aba principal
+
+
+-- Criação da aba principal
 local Main = MakeTab({Name = "Main"})
 local Visuais = MakeTab({Name = "Visuals"})
 local Player = MakeTab({Name = "Player"})
 local Teleport = MakeTab({Name = "Teleport"})
 local Config = MakeTab({Name = "Settings"})
+
+MakeNotifi({
+  Title = "Dragon Menu",
+  Text = "Script Loaded Successfully",
+  Time = 5
+})
+
 
 
 AddButton(Main, {
@@ -390,172 +401,6 @@ AddToggle(Visuais, {
 })
 
 
--- Variável global para controlar o estado do ESP
-local espAtivado = false
-
--- Serviços necessários
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-
--- Função para aplicar o Highlight
-local function aplicarHighlight(player)
-    if player == LocalPlayer then return end
-    local character = player.Character
-    if character and not character:FindFirstChild("ESPHighlight") then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "ESPHighlight"
-        highlight.Adornee = character
-        highlight.FillColor = Color3.fromRGB(255, 255, 255) -- Cor branca
-        highlight.FillTransparency = 1 -- Centro totalmente transparente
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- Cor branca
-        highlight.OutlineTransparency = 0 -- Contorno totalmente opaco
-        highlight.Parent = character
-    end
-end
-
--- Função para remover o Highlight
-local function removerHighlight(player)
-    local character = player.Character
-    if character then
-        local highlight = character:FindFirstChild("ESPHighlight")
-        if highlight then
-            highlight:Destroy()
-        end
-    end
-end
-
--- Loop de atualização contínua
-RunService.RenderStepped:Connect(function()
-    if espAtivado then
-        for _, player in ipairs(Players:GetPlayers()) do
-            aplicarHighlight(player)
-        end
-    else
-        for _, player in ipairs(Players:GetPlayers()) do
-            removerHighlight(player)
-        end
-    end
-end)
-
--- Monitorar novos jogadores
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        if espAtivado then
-            aplicarHighlight(player)
-        end
-    end)
-end)
-
--- Toggle para ativar/desativar o ESP
-AddToggle(Visuais, {
-    Name = "ESP Box",
-    Default = false,
-    Callback = function(Value)
-        espAtivado = Value
-    end
-})
-
-
-
-local Players = game:GetService("Players")
-
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-local linhas = {}
-local espConnections = {}
-local espLinhaAtivado = false
-local corVermelha = Color3.fromRGB(255, 0, 0)
-
-local function criarLinha(player)
-    if player == LocalPlayer then return end
-
-    if linhas[player] then
-        linhas[player]:Remove()
-        linhas[player] = nil
-    end
-    if espConnections[player] then
-        espConnections[player]:Disconnect()
-        espConnections[player] = nil
-    end
-
-    local linha = Drawing.new("Line")
-    linha.Thickness = 2
-    linha.Transparency = 1
-    linha.Visible = false
-    linha.Color = corVermelha
-    linhas[player] = linha
-
-    espConnections[player] = RunService.RenderStepped:Connect(function()
-        if not espLinhaAtivado then
-            linha.Visible = false
-            return
-        end
-
-        local char = player.Character
-        local head = char and char:FindFirstChild("Head")
-        if not head then
-            linha.Visible = false
-            return
-        end
-
-        local cam = workspace.CurrentCamera
-        local screenSize = cam.ViewportSize
-        local headPos, onScreen = cam:WorldToViewportPoint(head.Position)
-
-        if onScreen then
-            linha.From = Vector2.new(screenSize.X / 2, 0)
-            linha.To = Vector2.new(headPos.X, headPos.Y)
-            linha.Visible = true
-        else
-            linha.Visible = false
-        end
-    end)
-
-    player.CharacterAdded:Connect(function()
-        wait(1)
-        if espLinhaAtivado then
-            criarLinha(player)
-        end
-    end)
-end
-
-function ativarESP()
-    for _, p in ipairs(Players:GetPlayers()) do
-        criarLinha(p)
-    end
-    espConnections["PlayerAdded"] = Players.PlayerAdded:Connect(function(p)
-        wait(1)
-        criarLinha(p)
-    end)
-end
-
-function desativarESP()
-    for _, linha in pairs(linhas) do
-        if linha then linha:Remove() end
-    end
-    linhas = {}
-    for _, conn in pairs(espConnections) do
-        if conn then conn:Disconnect() end
-    end
-    espConnections = {}
-end
-
-AddToggle(Visuais, {
-    Name = "ESP Linhas",
-    Default = false,
-    Callback = function(Value)
-        espLinhaAtivado = Value
-        if espLinhaAtivado then
-            ativarESP()
-        else
-            desativarESP()
-        end
-    end
-})
-
-
 
 local Players = game:GetService("Players") 
 
@@ -767,4 +612,39 @@ AddToggle(Config, {
     Name = "Aimbot",
     Default = false,
     Callback = function(Value)
-     
+        AimbotEnabled = Value
+        FOVCircle.Visible = Value
+
+        if Value and not AimbotConnection then
+            AimbotConnection = RunService.RenderStepped:Connect(function()
+                if ChangeMode then toggleTargetPart() end
+                local target = getClosestPlayerToFOV()
+                if target and target.Character then
+                    local part = target.Character:FindFirstChild(AimbotTargetPart)
+                    if part then
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
+                    end
+                end
+            end)
+        elseif not Value and AimbotConnection then
+            AimbotConnection:Disconnect()
+            AimbotConnection = nil
+        end
+    end
+})
+
+-- Slider para controlar o tamanho do FOV
+AddSlider(Config, {
+    Name = "FOV",
+    MinValue = 16,
+    MaxValue = 250,
+    Default = FOVRadius,
+    Increase = 1,
+    Callback = function(Value)
+        FOVRadius = Value
+        FOVCircle.Radius = FOVRadius
+    end
+})
+
+
+
