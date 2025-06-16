@@ -710,6 +710,7 @@ AddButton(Teleport, {
     end
 })
 
+
 -- Serviços 
 
 local Players = game:GetService("Players")
