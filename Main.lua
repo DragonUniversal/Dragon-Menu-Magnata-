@@ -3,8 +3,8 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/DragonUniversal/Drago
 -- Cria a janela principal
 MakeWindow({
     Hub = {
-        Title = "Dragon Menu I Magnata Da Guerra - v1",
-        Animation = "by : Vito0296poq"
+        Title = "Dragon Menu I Magnata Da Guerra - v2",
+        Animation = "by : Vito0296poq "
     },
     
    Key = {
@@ -526,6 +526,26 @@ AddButton(Teleport, {
 })
 
 AddButton(Teleport, {
+    Name = "Prédio 1",
+    Callback = function()
+        print("Botão foi clicado!")
+        pcall(function()
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-730.6873168945312, 301.83740234375, -937.3375244140625)
+        end)
+    end
+})
+
+AddButton(Teleport, {
+    Name = "Prédio de heliponto",
+    Callback = function()
+        print("Botão foi clicado!")
+        pcall(function()
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-239.97340393066406, 447.56982421875, -1485.5546875)
+        end)
+    end
+})
+
+AddButton(Teleport, {
     Name = "Barril De Petróleo 1",
     Callback = function()
         print("Botão foi clicado!")
@@ -545,6 +565,15 @@ AddButton(Teleport, {
     end
 })
 
+AddButton(Teleport, {
+    Name = "Barril De Petróleo 3",
+    Callback = function()
+        print("Botão foi clicado!")
+        pcall(function()
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1683.255859375, 121.25241088867188, -3525.08740234375)
+        end)
+    end
+})
 
 -- Serviços 
 
@@ -647,4 +676,83 @@ AddSlider(Config, {
 })
 
 
+AddToggle(Config, {
+    Name = "FPS",
+    Default = false,
+    Callback = function(Value)
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local player = Players.LocalPlayer
+
+        local connection
+
+        local function createFPSCounter()
+            local playerGui = player:FindFirstChild("PlayerGui") or player:WaitForChild("PlayerGui")
+
+            -- Remover contador existente para evitar duplicações
+            local existingGui = playerGui:FindFirstChild("FPSCounter")
+            if existingGui then
+                existingGui:Destroy()
+            end
+
+            -- Criar novo ScreenGui
+            local screenGui = Instance.new("ScreenGui")
+            screenGui.Name = "FPSCounter"
+            screenGui.ResetOnSpawn = false
+            screenGui.Parent = playerGui
+
+            -- Criar FPS Label
+            local fpsLabel = Instance.new("TextLabel")
+            fpsLabel.Size = UDim2.new(0, 80, 0, 25)
+            fpsLabel.Position = UDim2.new(1, -290, 0, 1)
+            fpsLabel.BackgroundTransparency = 1
+            fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            fpsLabel.TextSize = 14
+            fpsLabel.Font = Enum.Font.Code
+            fpsLabel.Text = "FPS: 0"
+            fpsLabel.Parent = screenGui
+            fpsLabel.Active = true
+            fpsLabel.Draggable = true
+            fpsLabel.TextStrokeTransparency = 0.6
+            fpsLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+
+            -- FPS Calculation
+            local lastTime = tick()
+            local frameCount = 0
+
+            connection = RunService.RenderStepped:Connect(function()
+                frameCount = frameCount + 1
+                local currentTime = tick()
+                if currentTime - lastTime >= 1 then
+                    fpsLabel.Text = "FPS: " .. frameCount
+                    frameCount = 0
+                    lastTime = currentTime
+                end
+            end)
+
+            -- Atualizar após respawn
+            player.CharacterAdded:Connect(function()
+                task.wait(1)
+                createFPSCounter()
+            end)
+        end
+
+        if Value then
+            createFPSCounter()
+        else
+            -- Remover GUI e desconectar a atualização
+            local playerGui = player:FindFirstChild("PlayerGui")
+            if playerGui then
+                local existingGui = playerGui:FindFirstChild("FPSCounter")
+                if existingGui then
+                    existingGui:Destroy()
+                end
+            end
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+        end
+    end
+})
 
