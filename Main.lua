@@ -641,6 +641,39 @@ AddButton(Teleport, {
     end
 })
 
+-- Variável para guardar a posição salva
+local savedCFrame = nil
+
+-- Botão: Copiar e salvar posição
+AddButton(Teleport, {
+    Name = "Teleportar Para Posição Salva",
+    Callback = function()
+        print("Botão foi clicado! Salvando posição...")
+        pcall(function()
+            local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+            savedCFrame = hrp.CFrame
+            print("Posição salva:", tostring(savedCFrame))
+        end)
+    end
+})
+
+-- Botão: Teleportar para a posição salva
+AddButton(Teleport, {
+    Name = "Teleport From Saved Position",
+    Callback = function()
+        print("Botão foi clicado! Teleportando...")
+        pcall(function()
+            if savedCFrame then
+                local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+                hrp.CFrame = savedCFrame
+                print("Teleportado com sucesso.")
+            else
+                warn("Nenhuma posição salva ainda!")
+            end
+        end)
+    end
+})
+
 -- Serviços 
 
 local Players = game:GetService("Players")
