@@ -644,9 +644,9 @@ AddButton(Teleport, {
 -- Variável para guardar a posição salva
 local savedCFrame = nil
 
--- Botão: Copiar e salvar posição
+-- Botão: salvar posição
 AddButton(Teleport, {
-    Name = "Teleportar Para Posição Salva",
+    Name = "Salvar Posição",
     Callback = function()
         print("Botão foi clicado! Salvando posição...")
         pcall(function()
@@ -659,7 +659,7 @@ AddButton(Teleport, {
 
 -- Botão: Teleportar para a posição salva
 AddButton(Teleport, {
-    Name = "Teleport From Saved Position",
+    Name = "Teleportar para posição salva",
     Callback = function()
         print("Botão foi clicado! Teleportando...")
         pcall(function()
@@ -774,84 +774,4 @@ AddSlider(Config, {
     end
 })
 
-
-AddToggle(Config, {
-    Name = "FPS",
-    Default = false,
-    Callback = function(Value)
-        local Players = game:GetService("Players")
-        local RunService = game:GetService("RunService")
-        local player = Players.LocalPlayer
-
-        local connection
-
-        local function createFPSCounter()
-            local playerGui = player:FindFirstChild("PlayerGui") or player:WaitForChild("PlayerGui")
-
-            -- Remover contador existente para evitar duplicações
-            local existingGui = playerGui:FindFirstChild("FPSCounter")
-            if existingGui then
-                existingGui:Destroy()
-            end
-
-            -- Criar novo ScreenGui
-            local screenGui = Instance.new("ScreenGui")
-            screenGui.Name = "FPSCounter"
-            screenGui.ResetOnSpawn = false
-            screenGui.Parent = playerGui
-
-            -- Criar FPS Label
-            local fpsLabel = Instance.new("TextLabel")
-            fpsLabel.Size = UDim2.new(0, 80, 0, 25)
-            fpsLabel.Position = UDim2.new(1, -290, 0, 1)
-            fpsLabel.BackgroundTransparency = 1
-            fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            fpsLabel.TextSize = 14
-            fpsLabel.Font = Enum.Font.Code
-            fpsLabel.Text = "FPS: 0"
-            fpsLabel.Parent = screenGui
-            fpsLabel.Active = true
-            fpsLabel.Draggable = true
-            fpsLabel.TextStrokeTransparency = 0.6
-            fpsLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
-
-            -- FPS Calculation
-            local lastTime = tick()
-            local frameCount = 0
-
-            connection = RunService.RenderStepped:Connect(function()
-                frameCount = frameCount + 1
-                local currentTime = tick()
-                if currentTime - lastTime >= 1 then
-                    fpsLabel.Text = "FPS: " .. frameCount
-                    frameCount = 0
-                    lastTime = currentTime
-                end
-            end)
-
-            -- Atualizar após respawn
-            player.CharacterAdded:Connect(function()
-                task.wait(1)
-                createFPSCounter()
-            end)
-        end
-
-        if Value then
-            createFPSCounter()
-        else
-            -- Remover GUI e desconectar a atualização
-            local playerGui = player:FindFirstChild("PlayerGui")
-            if playerGui then
-                local existingGui = playerGui:FindFirstChild("FPSCounter")
-                if existingGui then
-                    existingGui:Destroy()
-                end
-            end
-            if connection then
-                connection:Disconnect()
-                connection = nil
-            end
-        end
-    end
-})
 
