@@ -276,13 +276,9 @@ AddToggle(Main, {
 })
 
 
-
--- Variáveis de controle
-
+-- Variáveis de controle 
 local espAtivado = false
-
 local connections = {}
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
@@ -293,17 +289,17 @@ local function criarESP(player)
     task.spawn(function()
         while espAtivado do
             local char = player.Character
-            local head = char and char:FindFirstChild("Head")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
             local humanoid = char and char:FindFirstChild("Humanoid")
 
-            if char and head and humanoid and humanoid.Health > 0 then
-                local esp = head:FindFirstChild("ESP")
+            if char and root and humanoid and humanoid.Health > 0 then
+                local esp = root:FindFirstChild("ESP")
                 if not esp then
                     esp = Instance.new("BillboardGui")
                     esp.Name = "ESP"
-                    esp.Adornee = head
-                    esp.Size = UDim2.new(0, 70, 0, 18) -- menor tamanho
-                    esp.StudsOffset = Vector3.new(0, 1.3, 0) -- mais próximo da cabeça
+                    esp.Adornee = root
+                    esp.Size = UDim2.new(0, 100, 0, 18)
+                    esp.StudsOffset = Vector3.new(0, -3, 0) -- abaixo dos pés
                     esp.AlwaysOnTop = true
 
                     local text = Instance.new("TextLabel")
@@ -311,14 +307,14 @@ local function criarESP(player)
                     text.Size = UDim2.new(1, 0, 1, 0)
                     text.BackgroundTransparency = 1
                     text.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    text.TextSize = 10 -- menor texto
+                    text.TextSize = 10
                     text.TextScaled = false
                     text.Font = Enum.Font.Gotham
                     text.TextStrokeTransparency = 0.4
                     text.TextStrokeColor3 = Color3.new(0, 0, 0)
                     text.Parent = esp
 
-                    esp.Parent = head
+                    esp.Parent = root
 
                     humanoid.Died:Connect(function()
                         if esp then esp:Destroy() end
@@ -326,12 +322,12 @@ local function criarESP(player)
                 end
 
                 local texto = esp:FindFirstChild("Texto")
-                if texto and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("HumanoidRootPart") then
-                    local distancia = (LocalPlayer.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
-                    texto.Text = player.Name .. " - " .. math.floor(distancia) .. "m"
+                if texto and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local distancia = (LocalPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                    texto.Text = player.Name .. "  " .. math.floor(distancia) .. "m"
                 end
             end
-            wait(0.3)
+            task.wait(0.3)
         end
     end)
 end
@@ -343,7 +339,7 @@ local function monitorarPlayer(player)
     end
 
     connections[player] = player.CharacterAdded:Connect(function()
-        wait(1)
+        task.wait(1)
         if espAtivado then
             criarESP(player)
         end
@@ -354,7 +350,7 @@ end
 
 -- Toggle para ativar/desativar o ESP
 AddToggle(Visuais, {
-    Name = "ESP Nome",
+    Name = "ESP Name",
     Default = false,
     Callback = function(Value)
         espAtivado = Value
@@ -371,12 +367,10 @@ AddToggle(Visuais, {
             for _, player in ipairs(Players:GetPlayers()) do
                 local char = player.Character
                 if char then
-                    local head = char:FindFirstChild("Head")
-                    if head then
-                        local esp = head:FindFirstChild("ESP")
-                        if esp then
-                            esp:Destroy()
-                        end
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        local esp = root:FindFirstChild("ESP")
+                        if esp then esp:Destroy() end
                     end
                 end
                 if connections[player] then
@@ -392,6 +386,7 @@ AddToggle(Visuais, {
         end
     end
 })
+
 
 -- Variável global para controlar o estado do ESP
 local espAtivado = false
