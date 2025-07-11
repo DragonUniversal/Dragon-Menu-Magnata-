@@ -4,7 +4,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/DragonUniversal/Drago
 MakeWindow({
     Hub = {
         Title = "Dragon Menu I Magnata Da Guerra - v2",
-        Animation = "by : Vito0296poq "
+        Animation = "by : Vitor Developer"
     },
     
    Key = {
@@ -12,7 +12,7 @@ MakeWindow({
         Title = "Sistema de Chave",
         Description = "Digite a chave correta para continuar.",
         KeyLink = "https://seusite.com/chave", -- Link para obter a chave (opcional)
-        Keys = {"1234", "chave-extra"}, -- Chaves válidas
+        Keys = {"1234", "chave-extra"},
         Notifi = {
             Notifications = true,
             CorrectKey = "Chave correta! Iniciando script...",
@@ -44,13 +44,6 @@ local Visuais = MakeTab({Name = "Visuals"})
 local Player = MakeTab({Name = "Player"})
 local Teleport = MakeTab({Name = "Teleport"})
 local Config = MakeTab({Name = "Settings"})
-
-MakeNotifi({
-  Title = "Dragon Menu",
-  Text = "Script Loaded Successfully",
-  Time = 5
-})
-
 
 
 AddButton(Main, {
