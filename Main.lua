@@ -3,7 +3,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/DragonUniversal/Drago
 -- Cria a janela principal
 MakeWindow({
     Hub = {
-        Title = "Dragon Menu I Magnata Da Guerra - v2",
+        Title = "Dragon Menu I Magnata Da Guerra - v3.7",
         Animation = "by : Vitor Developer"
     },
     
