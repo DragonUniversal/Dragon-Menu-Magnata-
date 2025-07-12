@@ -276,185 +276,6 @@ AddToggle(Main, {
 })
 
 
--- Variáveis de controle 
-local espAtivado = false
-local connections = {}
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Função para criar ESP
-local function criarESP(player)
-    if player == LocalPlayer then return end
-
-    task.spawn(function()
-        while espAtivado do
-            local char = player.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            local humanoid = char and char:FindFirstChild("Humanoid")
-
-            if char and root and humanoid and humanoid.Health > 0 then
-                local esp = root:FindFirstChild("ESP")
-                if not esp then
-                    esp = Instance.new("BillboardGui")
-                    esp.Name = "ESP"
-                    esp.Adornee = root
-                    esp.Size = UDim2.new(0, 100, 0, 18)
-                    esp.StudsOffset = Vector3.new(0, -3, 0) -- abaixo dos pés
-                    esp.AlwaysOnTop = true
-
-                    local text = Instance.new("TextLabel")
-                    text.Name = "Texto"
-                    text.Size = UDim2.new(1, 0, 1, 0)
-                    text.BackgroundTransparency = 1
-                    text.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    text.TextSize = 10
-                    text.TextScaled = false
-                    text.Font = Enum.Font.Gotham
-                    text.TextStrokeTransparency = 0.4
-                    text.TextStrokeColor3 = Color3.new(0, 0, 0)
-                    text.Parent = esp
-
-                    esp.Parent = root
-
-                    humanoid.Died:Connect(function()
-                        if esp then esp:Destroy() end
-                    end)
-                end
-
-                local texto = esp:FindFirstChild("Texto")
-                if texto and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local distancia = (LocalPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude
-                    texto.Text = player.Name .. "  " .. math.floor(distancia) .. "m"
-                end
-            end
-            task.wait(0.3)
-        end
-    end)
-end
-
--- Monitorar jogadores
-local function monitorarPlayer(player)
-    if connections[player] then
-        connections[player]:Disconnect()
-    end
-
-    connections[player] = player.CharacterAdded:Connect(function()
-        task.wait(1)
-        if espAtivado then
-            criarESP(player)
-        end
-    end)
-
-    criarESP(player)
-end
-
--- Toggle para ativar/desativar o ESP
-AddToggle(Visuais, {
-    Name = "ESP Name",
-    Default = false,
-    Callback = function(Value)
-        espAtivado = Value
-
-        if espAtivado then
-            for _, player in ipairs(Players:GetPlayers()) do
-                monitorarPlayer(player)
-            end
-
-            connections["PlayerAdded"] = Players.PlayerAdded:Connect(function(player)
-                monitorarPlayer(player)
-            end)
-        else
-            for _, player in ipairs(Players:GetPlayers()) do
-                local char = player.Character
-                if char then
-                    local root = char:FindFirstChild("HumanoidRootPart")
-                    if root then
-                        local esp = root:FindFirstChild("ESP")
-                        if esp then esp:Destroy() end
-                    end
-                end
-                if connections[player] then
-                    connections[player]:Disconnect()
-                    connections[player] = nil
-                end
-            end
-
-            if connections["PlayerAdded"] then
-                connections["PlayerAdded"]:Disconnect()
-                connections["PlayerAdded"] = nil
-            end
-        end
-    end
-})
-
-
--- Variável global para controlar o estado do ESP
-local espAtivado = false
-
--- Serviços necessários
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-
--- Função para aplicar o Highlight
-local function aplicarHighlight(player)
-    if player == LocalPlayer then return end
-    local character = player.Character
-    if character and not character:FindFirstChild("ESPHighlight") then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "ESPHighlight"
-        highlight.Adornee = character
-        highlight.FillColor = Color3.fromRGB(255, 255, 255) -- Cor branca
-        highlight.FillTransparency = 1 -- Centro totalmente transparente
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- Cor branca
-        highlight.OutlineTransparency = 0 -- Contorno totalmente opaco
-        highlight.Parent = character
-    end
-end
-
--- Função para remover o Highlight
-local function removerHighlight(player)
-    local character = player.Character
-    if character then
-        local highlight = character:FindFirstChild("ESPHighlight")
-        if highlight then
-            highlight:Destroy()
-        end
-    end
-end
-
--- Loop de atualização contínua
-RunService.RenderStepped:Connect(function()
-    if espAtivado then
-        for _, player in ipairs(Players:GetPlayers()) do
-            aplicarHighlight(player)
-        end
-    else
-        for _, player in ipairs(Players:GetPlayers()) do
-            removerHighlight(player)
-        end
-    end
-end)
-
--- Monitorar novos jogadores
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        if espAtivado then
-            aplicarHighlight(player)
-        end
-    end)
-end)
-
--- Toggle para ativar/desativar o ESP
-AddToggle(Visuais, {
-    Name = "ESP Box",
-    Default = false,
-    Callback = function(Value)
-        espAtivado = Value
-    end
-})
-
-
 
 local Players = game:GetService("Players") 
 
@@ -569,6 +390,121 @@ AddButton(Player, {
 })
 
 
+-- Variáveis de controle
+local espAtivado = false
+local connections = {}
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Função para criar ESP
+local function criarESP(player)
+    if player == LocalPlayer then return end
+
+    task.spawn(function()
+        while espAtivado do
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char and char:FindFirstChild("Humanoid")
+
+            if char and root and humanoid and humanoid.Health > 0 then
+                local esp = root:FindFirstChild("ESP")
+                if not esp then
+                    esp = Instance.new("BillboardGui")
+                    esp.Name = "ESP"
+                    esp.Adornee = root
+                    esp.Size = UDim2.new(0, 70, 0, 18)
+                    esp.StudsOffset = Vector3.new(0, -3, 0)
+                    esp.AlwaysOnTop = true
+
+                    local text = Instance.new("TextLabel")
+                    text.Name = "Texto"
+                    text.Size = UDim2.new(1, 0, 1, 0)
+                    text.BackgroundTransparency = 1
+                    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    text.TextSize = 10
+                    text.TextScaled = false
+                    text.Font = Enum.Font.Gotham
+                    text.TextStrokeTransparency = 0.4
+                    text.TextStrokeColor3 = Color3.new(0, 0, 0)
+                    text.Parent = esp
+
+                    esp.Parent = root
+
+                    humanoid.Died:Connect(function()
+                        if esp then esp:Destroy() end
+                    end)
+                end
+
+                local texto = esp:FindFirstChild("Texto")
+                if texto and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local distancia = (LocalPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                    texto.Text = player.Name .. " - " .. math.floor(distancia) .. ""
+                end
+            end
+            wait(0.3)
+        end
+    end)
+end
+
+-- Monitorar jogadores
+local function monitorarPlayer(player)
+    if connections[player] then
+        connections[player]:Disconnect()
+    end
+
+    connections[player] = player.CharacterAdded:Connect(function()
+        wait(1)
+        if espAtivado then
+            criarESP(player)
+        end
+    end)
+
+    criarESP(player)
+end
+
+-- Toggle para ativar/desativar o ESP
+AddToggle(Visuais, {
+    Name = "ESP Nome",
+    Default = false,
+    Callback = function(Value)
+        espAtivado = Value
+
+        if espAtivado then
+            for _, player in ipairs(Players:GetPlayers()) do
+                monitorarPlayer(player)
+            end
+
+            connections["PlayerAdded"] = Players.PlayerAdded:Connect(function(player)
+                monitorarPlayer(player)
+            end)
+        else
+            for _, player in ipairs(Players:GetPlayers()) do
+                local char = player.Character
+                if char then
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        local esp = root:FindFirstChild("ESP")
+                        if esp then
+                            esp:Destroy()
+                        end
+                    end
+                end
+                if connections[player] then
+                    connections[player]:Disconnect()
+                    connections[player] = nil
+                end
+            end
+
+            if connections["PlayerAdded"] then
+                connections["PlayerAdded"]:Disconnect()
+                connections["PlayerAdded"] = nil
+            end
+        end
+    end
+})
+
+
 AddButton(Teleport, {
     Name = "Bandeira",
     Callback = function()
@@ -628,6 +564,18 @@ AddButton(Teleport, {
         end)
     end
 })
+
+
+AddButton(Teleport, {
+    Name = "Barril De Petróleo 4",
+    Callback = function()
+        print("Botão foi clicado!")
+        pcall(function()
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Vector3.new(-971.543945, 69.552948, -809.066467))
+        end)
+    end
+})
+
 
 -- Variável para guardar a posição salva
 local savedCFrame = nil
