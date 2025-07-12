@@ -504,6 +504,136 @@ AddToggle(Visuais, {
     end
 })
 
+-- Variável global para controlar o estado do ESP
+
+local espAtivado = false
+
+
+
+-- Serviços necessários
+
+local Players = game:GetService("Players")
+
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+
+
+-- Função para aplicar o Highlight
+
+local function aplicarHighlight(player)
+
+    if player == LocalPlayer then return end
+
+    local character = player.Character
+
+    if character and not character:FindFirstChild("ESPHighlight") then
+
+        local highlight = Instance.new("Highlight")
+
+        highlight.Name = "ESPHighlight"
+
+        highlight.Adornee = character
+
+        highlight.FillColor = Color3.fromRGB(255, 255, 255) 
+
+        highlight.FillTransparency = 1 
+
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) 
+
+        highlight.OutlineTransparency = 0
+
+        highlight.Parent = character
+
+    end
+
+end
+
+
+
+-- Função para remover o Highlight
+
+local function removerHighlight(player)
+
+    local character = player.Character
+
+    if character then
+
+        local highlight = character:FindFirstChild("ESPHighlight")
+
+        if highlight then
+
+            highlight:Destroy()
+
+        end
+
+    end
+
+end
+
+
+
+-- Loop de atualização contínua
+
+RunService.RenderStepped:Connect(function()
+
+    if espAtivado then
+
+        for _, player in ipairs(Players:GetPlayers()) do
+
+            aplicarHighlight(player)
+
+        end
+
+    else
+
+        for _, player in ipairs(Players:GetPlayers()) do
+
+            removerHighlight(player)
+
+        end
+
+    end
+
+end)
+
+
+
+-- Monitorar novos jogadores
+
+Players.PlayerAdded:Connect(function(player)
+
+    player.CharacterAdded:Connect(function()
+
+        if espAtivado then
+
+            aplicarHighlight(player)
+
+        end
+
+    end)
+
+end)
+
+
+
+-- Toggle para ativar/desativar o ESP
+
+AddToggle(Visuais, {
+
+    Name = "ESP Box",
+
+    Default = false,
+
+    Callback = function(Value)
+
+        espAtivado = Value
+
+    end
+
+})
+
 
 AddButton(Teleport, {
     Name = "Bandeira",
