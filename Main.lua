@@ -1,41 +1,67 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/DragonUniversal/Dragon-Menu-/refs/heads/main/Library.lua"))()
 
--- Cria a janela principal
+
+
 MakeWindow({
+
     Hub = {
-        Title = "Dragon Menu I Magnata Da Guerra - v3.7",
+
+        Title = "Dragon Menu I Magnata Da Guerra - v3.5",
+
         Animation = "by : VictorScript"
-    })
+
+    },
+
     
-   Key = {
-        KeySystem = false, -- Ativa o sistema de Key
+
+    Key = {
+
+        KeySystem = false,
+
         Title = "Sistema de Chave",
+
         Description = "Digite a chave correta para continuar.",
-        KeyLink = "https://seusite.com/chave", -- Link para obter a chave (opcional)
-        Keys = {"1234", "chave-extra"},
+
+        KeyLink = "https://seusite.com/chave",
+
+        Keys = {"1234", "28922"},
+
         Notifi = {
+
             Notifications = true,
+
             CorrectKey = "Chave correta! Iniciando script...",
+
             Incorrectkey = "Chave incorreta, tente novamente.",
+
             CopyKeyLink = "Link copiado!"
+
         }
+
     }
+
 })
 
 
--- Botão de minimizar
 
 MinimizeButton({
 
     Image = "rbxassetid://137903795082783",
+
     Size = {40, 40},
+
     Color = Color3.fromRGB(10, 10, 10),
+
     Corner = true,
-    Stroke = false,
+
+    CornerRadius = UDim.new(0.5, 0),
+
+    Stroke = true,  -- Ativa a borda
+
     StrokeColor = Color3.fromRGB(255, 0, 0)
+
 })
 
--- Criação da aba principal
 
 
 -- Criação da aba principal
@@ -505,135 +531,70 @@ AddToggle(Visuais, {
 })
 
 -- Variável global para controlar o estado do ESP
-
 local espAtivado = false
 
-
-
 -- Serviços necessários
-
 local Players = game:GetService("Players")
-
 local RunService = game:GetService("RunService")
-
 local LocalPlayer = Players.LocalPlayer
 
-
-
 -- Função para aplicar o Highlight
-
 local function aplicarHighlight(player)
-
     if player == LocalPlayer then return end
-
     local character = player.Character
-
     if character and not character:FindFirstChild("ESPHighlight") then
-
         local highlight = Instance.new("Highlight")
-
         highlight.Name = "ESPHighlight"
-
         highlight.Adornee = character
-
-        highlight.FillColor = Color3.fromRGB(255, 255, 255) 
-
+        highlight.FillColor = Color3.fromRGB(255, 255, 255)
         highlight.FillTransparency = 1 
-
         highlight.OutlineColor = Color3.fromRGB(255, 255, 255) 
-
         highlight.OutlineTransparency = 0
-
         highlight.Parent = character
-
     end
-
 end
-
-
 
 -- Função para remover o Highlight
-
 local function removerHighlight(player)
-
     local character = player.Character
-
     if character then
-
         local highlight = character:FindFirstChild("ESPHighlight")
-
         if highlight then
-
             highlight:Destroy()
-
         end
-
     end
-
 end
 
-
-
 -- Loop de atualização contínua
-
 RunService.RenderStepped:Connect(function()
-
     if espAtivado then
-
         for _, player in ipairs(Players:GetPlayers()) do
-
             aplicarHighlight(player)
-
         end
-
     else
-
         for _, player in ipairs(Players:GetPlayers()) do
-
             removerHighlight(player)
-
         end
-
     end
-
 end)
-
-
 
 -- Monitorar novos jogadores
-
 Players.PlayerAdded:Connect(function(player)
-
     player.CharacterAdded:Connect(function()
-
         if espAtivado then
-
             aplicarHighlight(player)
-
         end
-
     end)
-
 end)
 
-
-
 -- Toggle para ativar/desativar o ESP
-
 AddToggle(Visuais, {
-
     Name = "ESP Box",
-
     Default = false,
-
     Callback = function(Value)
-
         espAtivado = Value
-
     end
-
 })
-
 
 AddButton(Teleport, {
     Name = "Bandeira",
@@ -740,203 +701,103 @@ AddButton(Teleport, {
     end
 })
 
+
 -- Serviços
 
-
-
 local Players = game:GetService("Players")
-
-
-
 local RunService = game:GetService("RunService")
-
 local LocalPlayer = Players.LocalPlayer
-
 local Camera = workspace.CurrentCamera
 
-
-
 -- Variáveis do Aimbot
-
 local AimbotEnabled = false
-
 local AimbotConnection = nil
-
 local FOVRadius = 100
-
 local AimbotTargetPart = "Head"
-
 local ChangeMode = false
 
-
-
 -- Desenha o círculo de FOV
-
 local FOVCircle = Drawing.new("Circle")
-
 FOVCircle.Color = Color3.fromRGB(255, 0, 0)
-
 FOVCircle.Thickness = 2
-
 FOVCircle.Filled = false
-
 FOVCircle.Visible = false
-
 FOVCircle.Radius = FOVRadius
 
-
-
 -- Correção do centro
-
-local FOV_OffsetX = 5  -- Corrigido para centralizar melhor a mira
-
+local FOV_OffsetX = 5
 local FOV_OffsetY = 0
 
-
-
 -- Atualiza posição do círculo de FOV
-
 RunService.RenderStepped:Connect(function()
-
     local screenSize = Camera.ViewportSize
-
     FOVCircle.Position = Vector2.new((screenSize.X / 2) + FOV_OffsetX, (screenSize.Y / 2) + FOV_OffsetY)
-
 end)
 
-
-
 -- Alterna entre Head e Neck automaticamente
-
 local function toggleTargetPart()
-
     AimbotTargetPart = (AimbotTargetPart == "Head") and "Neck" or "Head"
-
 end
-
-
 
 -- Encontra o jogador mais próximo do FOV
-
 local function getClosestPlayerToFOV()
-
     local closestPlayer = nil
-
     local shortestDistance = math.huge
 
-
-
     for _, otherPlayer in ipairs(Players:GetPlayers()) do
-
         if otherPlayer ~= LocalPlayer and otherPlayer.Character then
-
             local part = otherPlayer.Character:FindFirstChild(AimbotTargetPart)
-
             if part then
-
                 local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
-
                 if onScreen then
-
                     local dist = (Vector2.new(pos.X, pos.Y) - FOVCircle.Position).Magnitude
-
                     if dist < FOVCircle.Radius and dist < shortestDistance then
-
                         shortestDistance = dist
-
                         closestPlayer = otherPlayer
-
                     end
-
                 end
-
             end
-
         end
-
     end
-
-
 
     return closestPlayer
-
 end
 
-
-
 -- Toggle do Aimbot
-
 AddToggle(Config, {
-
     Name = "Aimbot",
-
     Default = false,
-
     Callback = function(Value)
-
         AimbotEnabled = Value
-
         FOVCircle.Visible = Value
 
-
-
         if Value and not AimbotConnection then
-
             AimbotConnection = RunService.RenderStepped:Connect(function()
-
                 if ChangeMode then toggleTargetPart() end
-
                 local target = getClosestPlayerToFOV()
-
                 if target and target.Character then
-
                     local part = target.Character:FindFirstChild(AimbotTargetPart)
-
                     if part then
-
                         Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
-
                     end
-
                 end
-
             end)
-
         elseif not Value and AimbotConnection then
-
             AimbotConnection:Disconnect()
-
             AimbotConnection = nil
-
         end
-
     end
-
 })
-
-
 
 -- Slider para controlar o tamanho do FOV
-
 AddSlider(Config, {
-
     Name = "FOV",
-
     MinValue = 16,
-
     MaxValue = 250,
-
     Default = FOVRadius,
-
     Increase = 1,
-
     Callback = function(Value)
-
         FOVRadius = Value
-
         FOVCircle.Radius = FOVRadius
-
     end
-
 })
-
