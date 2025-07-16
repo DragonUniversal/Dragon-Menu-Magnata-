@@ -4,8 +4,8 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/DragonUniversal/Drago
 MakeWindow({
     Hub = {
         Title = "Dragon Menu I Magnata Da Guerra - v3.7",
-        Animation = "by : Vitor Developer"
-    },
+        Animation = "by : VictorScript"
+    })
     
    Key = {
         KeySystem = false, -- Ativa o sistema de Key
@@ -740,104 +740,203 @@ AddButton(Teleport, {
     end
 })
 
--- Serviços 
+-- Serviços
+
+
 
 local Players = game:GetService("Players")
 
+
+
 local RunService = game:GetService("RunService")
+
 local LocalPlayer = Players.LocalPlayer
+
 local Camera = workspace.CurrentCamera
 
+
+
 -- Variáveis do Aimbot
+
 local AimbotEnabled = false
+
 local AimbotConnection = nil
+
 local FOVRadius = 100
-local AimbotTargetPart = "Head" -- Padrão
+
+local AimbotTargetPart = "Head"
+
 local ChangeMode = false
 
+
+
 -- Desenha o círculo de FOV
+
 local FOVCircle = Drawing.new("Circle")
+
 FOVCircle.Color = Color3.fromRGB(255, 0, 0)
+
 FOVCircle.Thickness = 2
+
 FOVCircle.Filled = false
+
 FOVCircle.Visible = false
+
 FOVCircle.Radius = FOVRadius
 
-local FOV_OffsetX = 30
+
+
+-- Correção do centro
+
+local FOV_OffsetX = 5  -- Corrigido para centralizar melhor a mira
+
 local FOV_OffsetY = 0
 
+
+
 -- Atualiza posição do círculo de FOV
+
 RunService.RenderStepped:Connect(function()
+
     local screenSize = Camera.ViewportSize
+
     FOVCircle.Position = Vector2.new((screenSize.X / 2) + FOV_OffsetX, (screenSize.Y / 2) + FOV_OffsetY)
+
 end)
 
--- Alterna automaticamente entre Head e Neck
+
+
+-- Alterna entre Head e Neck automaticamente
+
 local function toggleTargetPart()
+
     AimbotTargetPart = (AimbotTargetPart == "Head") and "Neck" or "Head"
+
 end
 
--- Encontra jogador mais próximo dentro do FOV
+
+
+-- Encontra o jogador mais próximo do FOV
+
 local function getClosestPlayerToFOV()
+
     local closestPlayer = nil
+
     local shortestDistance = math.huge
 
+
+
     for _, otherPlayer in ipairs(Players:GetPlayers()) do
+
         if otherPlayer ~= LocalPlayer and otherPlayer.Character then
+
             local part = otherPlayer.Character:FindFirstChild(AimbotTargetPart)
+
             if part then
+
                 local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+
                 if onScreen then
+
                     local dist = (Vector2.new(pos.X, pos.Y) - FOVCircle.Position).Magnitude
+
                     if dist < FOVCircle.Radius and dist < shortestDistance then
+
                         shortestDistance = dist
+
                         closestPlayer = otherPlayer
+
                     end
+
                 end
+
             end
+
         end
+
     end
+
+
 
     return closestPlayer
+
 end
 
+
+
 -- Toggle do Aimbot
+
 AddToggle(Config, {
+
     Name = "Aimbot",
+
     Default = false,
+
     Callback = function(Value)
+
         AimbotEnabled = Value
+
         FOVCircle.Visible = Value
 
+
+
         if Value and not AimbotConnection then
+
             AimbotConnection = RunService.RenderStepped:Connect(function()
+
                 if ChangeMode then toggleTargetPart() end
+
                 local target = getClosestPlayerToFOV()
+
                 if target and target.Character then
+
                     local part = target.Character:FindFirstChild(AimbotTargetPart)
+
                     if part then
+
                         Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
+
                     end
+
                 end
+
             end)
+
         elseif not Value and AimbotConnection then
+
             AimbotConnection:Disconnect()
+
             AimbotConnection = nil
+
         end
+
     end
+
 })
+
+
 
 -- Slider para controlar o tamanho do FOV
-AddSlider(Config, {
-    Name = "FOV",
-    MinValue = 16,
-    MaxValue = 250,
-    Default = FOVRadius,
-    Increase = 1,
-    Callback = function(Value)
-        FOVRadius = Value
-        FOVCircle.Radius = FOVRadius
-    end
-})
 
+AddSlider(Config, {
+
+    Name = "FOV",
+
+    MinValue = 16,
+
+    MaxValue = 250,
+
+    Default = FOVRadius,
+
+    Increase = 1,
+
+    Callback = function(Value)
+
+        FOVRadius = Value
+
+        FOVCircle.Radius = FOVRadius
+
+    end
+
+})
 
