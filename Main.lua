@@ -530,15 +530,16 @@ AddToggle(Visuais, {
     end
 })
 
+
 -- Variável global para controlar o estado do ESP
 local espAtivado = false
 
--- Serviços necessários
+-- Serviços
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Função para aplicar o Highlight
+-- Aplica o Highlight ao personagem
 local function aplicarHighlight(player)
     if player == LocalPlayer then return end
     local character = player.Character
@@ -547,14 +548,14 @@ local function aplicarHighlight(player)
         highlight.Name = "ESPHighlight"
         highlight.Adornee = character
         highlight.FillColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 1 
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) 
+        highlight.FillTransparency = 1
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
         highlight.OutlineTransparency = 0
         highlight.Parent = character
     end
 end
 
--- Função para remover o Highlight
+-- Remove o Highlight
 local function removerHighlight(player)
     local character = player.Character
     if character then
@@ -565,26 +566,40 @@ local function removerHighlight(player)
     end
 end
 
--- Loop de atualização contínua
-RunService.RenderStepped:Connect(function()
-    if espAtivado then
-        for _, player in ipairs(Players:GetPlayers()) do
+-- Atualiza todos os jogadores
+local function atualizarESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if espAtivado then
             aplicarHighlight(player)
-        end
-    else
-        for _, player in ipairs(Players:GetPlayers()) do
+        else
             removerHighlight(player)
         end
     end
-end)
+end
 
--- Monitorar novos jogadores
-Players.PlayerAdded:Connect(function(player)
+-- Listener para novos jogadores e respawn
+local function monitorarPlayer(player)
+    if player == LocalPlayer then return end
+
     player.CharacterAdded:Connect(function()
         if espAtivado then
             aplicarHighlight(player)
         end
     end)
+end
+
+-- Inicia monitoramento de todos os jogadores
+for _, player in ipairs(Players:GetPlayers()) do
+    monitorarPlayer(player)
+end
+
+Players.PlayerAdded:Connect(monitorarPlayer)
+
+-- Loop contínuo 
+RunService.RenderStepped:Connect(function()
+    if espAtivado then
+        atualizarESP()
+    end
 end)
 
 -- Toggle para ativar/desativar o ESP
@@ -593,15 +608,17 @@ AddToggle(Visuais, {
     Default = false,
     Callback = function(Value)
         espAtivado = Value
+        atualizarESP()
     end
 })
+
 
 AddButton(Teleport, {
     Name = "Bandeira",
     Callback = function()
         print("Botão foi clicado!")
         pcall(function()
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-659.4813842773438, 186.2876434326172, -1258.3475341796875)
+      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-659.4813842773438, 186.2876434326172, -1258.3475341796875)
         end)
     end
 })
