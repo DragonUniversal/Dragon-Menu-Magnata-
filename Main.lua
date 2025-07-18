@@ -871,83 +871,100 @@ AddSlider(Config, {
 
 
 
--- Silent Aim
-
+-- Serviços
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
 -- Configurações
 local SilentAimEnabled = false
 local TargetPart = "Head"
-local FOV = 120
+local FOVRadius = 100
 
--- FOV
+-- Círculo FOV (branco)
 local FOVCircle = Drawing.new("Circle")
-FOVCircle.Color = Color3.fromRGB(255, 255, 255)
-FOVCircle.Thickness = 2
+FOVCircle.Color = Color3.new(1, 1, 1) -- branco
+FOVCircle.Thickness = 1.5
 FOVCircle.Filled = false
-FOVCircle.Transparency = 1
-FOVCircle.Radius = FOV
+FOVCircle.Radius = FOVRadius
 FOVCircle.Visible = false
 
--- Atualiza
 RunService.RenderStepped:Connect(function()
-	FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    local screenSize = Camera.ViewportSize
+    FOVCircle.Position = Vector2.new(screenSize.X / 2, screenSize.Y / 2)
 end)
 
--- Função para encontrar o alvo 
-local function GetClosestTarget()
-	local closest, dist = nil, math.huge
+-- Função para encontrar o alvo mais próximo
+local function getClosestTarget()
+    local closestPlayer
+    local shortestDistance = FOVRadius
 
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(TargetPart) then
-			local part = player.Character[TargetPart]
-			local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-			if onScreen then
-				local distance = (Vector2.new(screenPos.X, screenPos.Y) - FOVCircle.Position).Magnitude
-				if distance < dist and distance < FOV then
-					closest = part
-					dist = distance
-				end
-			end
-		end
-	end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local part = player.Character:FindFirstChild(TargetPart)
+            if part then
+                local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                if onScreen then
+                    local distance = (Vector2.new(pos.X, pos.Y) - FOVCircle.Position).Magnitude
+                    if distance < shortestDistance then
+                        closestPlayer = player
+                        shortestDistance = distance
+                    end
+                end
+            end
+        end
+    end
 
-	return closest
+    return closestPlayer
 end
 
--- Automaticamente para o alvo
-RunService.RenderStepped:Connect(function()
-	if SilentAimEnabled then
-		local target = GetClosestTarget()
-		if target then
-			local targetPos = target.Position
-			Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
-		end
-	end
+-- Hook para interceptar Raycast (Silent Aim)
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+
+    if SilentAimEnabled and method == "FindPartOnRayWithIgnoreList" or method == "Raycast" then
+        local target = getClosestTarget()
+        if target and target.Character and target.Character:FindFirstChild(TargetPart) then
+            local targetPos = target.Character[TargetPart].Position
+            local origin = Camera.CFrame.Position
+            local direction = (targetPos - origin).Unit * 1000
+
+            -- Substitui o Ray pelo nosso customizado
+            if method == "Raycast" then
+                args[2] = direction
+                return workspace:Raycast(origin, direction, unpack(args, 3))
+            elseif method == "FindPartOnRayWithIgnoreList" then
+                args[1] = Ray.new(origin, direction)
+                return oldNamecall(self, unpack(args))
+            end
+        end
+    end
+
+    return oldNamecall(self, ...)
 end)
 
--- Botão de ativar/desativar
+-- Toggle do Silent Aim
 AddToggle(Config, {
-	Name = "Silent Aim",
-	Default = false,
-	Callback = function(state)
-		SilentAimEnabled = state
-		FOVCircle.Visible = state
-	end
+    Name = "Silent Aim",
+    Default = false,
+    Callback = function(Value)
+        SilentAimEnabled = Value
+        FOVCircle.Visible = Value
+    end
 })
 
--- Slider de FOV
+-- Slider do FOV
 AddSlider(Config, {
-	Name = "Tamanho Do FOV",
-	MinValue = 50,
-	MaxValue = 300,
-	Default = FOV,
-	Increase = 1,
-	Callback = function(value)
-		FOV = value
-		FOVCircle.Radius = value
-	end
+    Name = "Silent FOV",
+    MinValue = 16,
+    MaxValue = 300,
+    Default = FOVRadius,
+    Increase = 1,
+    Callback = function(Value)
+        FOVRadius = Value
+        FOVCircle.Radius = FOVRadius
+    end
 })
