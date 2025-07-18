@@ -416,13 +416,15 @@ AddButton(Player, {
 })
 
 
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local espNomeAtivado = false
 local espDistAtivado = false
 local connections = {}
+
+-- Cor customizável
+local espCor = Color3.fromRGB(255, 0, 0)
 
 local function criarESP(player)
     if player == LocalPlayer then return end
@@ -431,12 +433,10 @@ local function criarESP(player)
         while (espNomeAtivado or espDistAtivado) and player and player.Character do
             local char = player.Character
             local head = char:FindFirstChild("Head")
-            local rightFoot = char:FindFirstChild("RightFoot")
+            local root = char:FindFirstChild("HumanoidRootPart")
             local humanoid = char:FindFirstChild("Humanoid")
 
             if humanoid and humanoid.Health > 0 then
-                local cor = Color3.fromRGB(255, 255, 255)
-
                 -- ESP NOME
                 if espNomeAtivado and head and not head:FindFirstChild("ESP_Name") then
                     local espNome = Instance.new("BillboardGui")
@@ -447,9 +447,10 @@ local function criarESP(player)
                     espNome.AlwaysOnTop = true
 
                     local texto = Instance.new("TextLabel")
+                    texto.Name = "Texto"
                     texto.Size = UDim2.new(1, 0, 1, 0)
                     texto.BackgroundTransparency = 1
-                    texto.TextColor3 = cor
+                    texto.TextColor3 = espCor
                     texto.TextStrokeTransparency = 0.4
                     texto.TextStrokeColor3 = Color3.new(0, 0, 0)
                     texto.Font = Enum.Font.Gotham
@@ -465,39 +466,46 @@ local function criarESP(player)
                 end
 
                 -- ESP DISTÂNCIA
-                if espDistAtivado and rightFoot and not rightFoot:FindFirstChild("ESP_Distancia") then
+                if espDistAtivado and root and not root:FindFirstChild("ESP_Distancia") then
                     local espDist = Instance.new("BillboardGui")
                     espDist.Name = "ESP_Distancia"
-                    espDist.Adornee = rightFoot
+                    espDist.Adornee = root
                     espDist.Size = UDim2.new(0, 100, 0, 18)
-                    espDist.StudsOffset = Vector3.new(1.5, 0, 0)
+                    espDist.StudsOffset = Vector3.new(0, -3, 0)
                     espDist.AlwaysOnTop = true
 
                     local textoDist = Instance.new("TextLabel")
+                    textoDist.Name = "Texto"
                     textoDist.Size = UDim2.new(1, 0, 1, 0)
                     textoDist.BackgroundTransparency = 1
-                    textoDist.TextColor3 = cor
+                    textoDist.TextColor3 = espCor
                     textoDist.TextStrokeTransparency = 0.4
                     textoDist.TextStrokeColor3 = Color3.new(0, 0, 0)
                     textoDist.Font = Enum.Font.Gotham
                     textoDist.TextSize = 10
-                    textoDist.Name = "Texto"
                     textoDist.Text = ""
                     textoDist.Parent = espDist
 
-                    espDist.Parent = rightFoot
+                    espDist.Parent = root
 
                     humanoid.Died:Connect(function()
                         espDist:Destroy()
                     end)
                 end
 
-                -- Atualizar texto da distância
-                if espDistAtivado and rightFoot and rightFoot:FindFirstChild("ESP_Distancia") then
-                    local textoDist = rightFoot.ESP_Distancia:FindFirstChild("Texto")
-                    if textoDist and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("HumanoidRootPart") then
+                -- Atualizar texto e cor
+                if root then
+                    local distGui = root:FindFirstChild("ESP_Distancia")
+                    if distGui and distGui:FindFirstChild("Texto") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("HumanoidRootPart") then
                         local distancia = (LocalPlayer.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
-                        textoDist.Text = math.floor(distancia) .. "m"
+                        distGui.Texto.Text = math.floor(distancia) .. "m"
+                        distGui.Texto.TextColor3 = espCor
+                    end
+                end
+                if head then
+                    local nomeGui = head:FindFirstChild("ESP_Name")
+                    if nomeGui and nomeGui:FindFirstChild("Texto") then
+                        nomeGui.Texto.TextColor3 = espCor
                     end
                 end
             end
@@ -528,20 +536,20 @@ local function limparESP()
         local char = player.Character
         if char then
             local head = char:FindFirstChild("Head")
-            local foot = char:FindFirstChild("RightFoot")
+            local root = char:FindFirstChild("HumanoidRootPart")
             if head and head:FindFirstChild("ESP_Name") then
                 head.ESP_Name:Destroy()
             end
-            if foot and foot:FindFirstChild("ESP_Distancia") then
-                foot.ESP_Distancia:Destroy()
+            if root and root:FindFirstChild("ESP_Distancia") then
+                root.ESP_Distancia:Destroy()
             end
         end
     end
 end
 
--- ESP NOME
+-- BOTÃO: ESP NOME
 AddToggle(Visuais, {
-    Name = "ESP Name",
+    Name = "ESP Nome",
     Default = false,
     Callback = function(Value)
         espNomeAtivado = Value
@@ -559,9 +567,9 @@ AddToggle(Visuais, {
     end
 })
 
--- ESP DISTÂNCIA
+-- BOTÃO: ESP DISTÂNCIA
 AddToggle(Visuais, {
-    Name = "ESP Distance",
+    Name = "ESP Distancia",
     Default = false,
     Callback = function(Value)
         espDistAtivado = Value
@@ -579,17 +587,25 @@ AddToggle(Visuais, {
     end
 })
 
+-- COLOR
+AddColorPicker(Visuais, {
+    Name = "Change Color",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(Value)
+        espCor = Value
+    end
+})
 
 
--- Variável global para controlar o estado do ESP
+-- Variável global
 local espAtivado = false
 
--- Serviços
+-- Serviços necessários
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Aplica o Highlight ao personagem
+-- Função para aplicar o Highlight
 local function aplicarHighlight(player)
     if player == LocalPlayer then return end
     local character = player.Character
@@ -597,15 +613,15 @@ local function aplicarHighlight(player)
         local highlight = Instance.new("Highlight")
         highlight.Name = "ESPHighlight"
         highlight.Adornee = character
-        highlight.FillColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 1
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.OutlineTransparency = 0
+        highlight.FillColor = Color3.fromRGB(255, 255, 255) -- Cor branca
+        highlight.FillTransparency = 1 -- Centro totalmente transparente
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- Cor branca
+        highlight.OutlineTransparency = 0 -- Contorno totalmente opaco
         highlight.Parent = character
     end
 end
 
--- Remove o Highlight
+-- Função para remover o Highlight
 local function removerHighlight(player)
     local character = player.Character
     if character then
@@ -616,40 +632,26 @@ local function removerHighlight(player)
     end
 end
 
--- Atualiza todos os jogadores
-local function atualizarESP()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if espAtivado then
+-- Loop de atualização contínua
+RunService.RenderStepped:Connect(function()
+    if espAtivado then
+        for _, player in ipairs(Players:GetPlayers()) do
             aplicarHighlight(player)
-        else
+        end
+    else
+        for _, player in ipairs(Players:GetPlayers()) do
             removerHighlight(player)
         end
     end
-end
+end)
 
--- Listener para novos jogadores e respawn
-local function monitorarPlayer(player)
-    if player == LocalPlayer then return end
-
+-- Monitorar novos jogadores
+Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
         if espAtivado then
             aplicarHighlight(player)
         end
     end)
-end
-
--- Inicia monitoramento de todos os jogadores
-for _, player in ipairs(Players:GetPlayers()) do
-    monitorarPlayer(player)
-end
-
-Players.PlayerAdded:Connect(monitorarPlayer)
-
--- Loop contínuo 
-RunService.RenderStepped:Connect(function()
-    if espAtivado then
-        atualizarESP()
-    end
 end)
 
 -- Toggle para ativar/desativar o ESP
@@ -658,7 +660,6 @@ AddToggle(Visuais, {
     Default = false,
     Callback = function(Value)
         espAtivado = Value
-        atualizarESP()
     end
 })
 
