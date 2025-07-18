@@ -866,3 +866,100 @@ AddSlider(Config, {
         FOVCircle.Radius = FOVRadius
     end
 })
+
+
+-- Serviços
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Variáveis do Silent Aim
+local SilentAimEnabled = false
+local FOVRadius = 100
+local SilentAimTargetPart = "Head"
+
+-- Criação do círculo FOV
+local SilentAimCircle = Drawing.new("Circle")
+SilentAimCircle.Color = Color3.fromRGB(0, 255, 0)
+SilentAimCircle.Thickness = 1.5
+SilentAimCircle.Filled = false
+SilentAimCircle.Visible = false
+SilentAimCircle.Radius = FOVRadius
+
+-- Offset para posicionamento visual (ajuste conforme necessário)
+local FOV_OffsetX = 30
+local FOV_OffsetY = 0
+
+-- Atualiza a posição do FOV no RenderStepped
+RunService.RenderStepped:Connect(function()
+    local screenSize = Camera.ViewportSize
+    SilentAimCircle.Position = Vector2.new((screenSize.X / 2) + FOV_OffsetX, (screenSize.Y / 2) + FOV_OffsetY)
+end)
+
+-- Função para encontrar o alvo mais próximo
+local function getClosestToFOV()
+    local closest = nil
+    local shortestDist = math.huge
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(SilentAimTargetPart) then
+            local part = player.Character[SilentAimTargetPart]
+            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+            if onScreen then
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - SilentAimCircle.Position).Magnitude
+                if dist < FOVRadius and dist < shortestDist then
+                    shortestDist = dist
+                    closest = part
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+-- Hook de raycast para "redirecionar" disparos
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+
+    if SilentAimEnabled and method == "FireServer" and tostring(self):lower():find("shoot") then
+        local targetPart = getClosestToFOV()
+        if targetPart then
+            -- Substitui a posição de tiro pelo alvo encontrado
+            for i, v in ipairs(args) do
+                if typeof(v) == "Vector3" then
+                    args[i] = targetPart.Position + (targetPart.Velocity * 0.05)
+                end
+            end
+            return oldNamecall(self, unpack(args))
+        end
+    end
+
+    return oldNamecall(self, ...)
+end)
+
+-- Toggle para ativar/desativar Silent Aim
+AddToggle(Config, {
+    Name = "Silent Aim",
+    Default = false,
+    Callback = function(Value)
+        SilentAimEnabled = Value
+        SilentAimCircle.Visible = Value
+    end
+})
+
+-- Slider de ajuste de FOV
+AddSlider(Config, {
+    Name = "Silent FOV",
+    MinValue = 16,
+    MaxValue = 100,
+    Default = FOVRadius,
+    Increase = 1,
+    Callback = function(Value)
+        FOVRadius = Value
+        SilentAimCircle.Radius = Value
+    end
+})
